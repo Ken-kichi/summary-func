@@ -6,9 +6,7 @@ import requests
 from bs4 import BeautifulSoup
 from openai import AzureOpenAI
 from azure.storage.blob import BlobServiceClient, ContainerClient
-from azure.data.tables import TableServiceClient, TableEntity
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from azure.data.tables import TableServiceClient
 
 
 def search_bring_news(query: str, bing_key: Optional[str]) -> Optional[List[dict]]:
@@ -65,19 +63,6 @@ def get_table_client(table_conn_str: str, table_name: str):
     return table_service.get_table_client(table_name)
 
 
-def sanitize_row_key(link: str) -> str:
-    return link.replace("/", "_")[:200]
-
-
-def article_already_summarized(table_client, partition_key: str, row_key: str) -> bool:
-    try:
-        _ = table_client.get_entity(
-            partition_key=partition_key, row_key=row_key)
-        return True
-    except Exception:
-        return False
-
-
 def get_article_content(link: str) -> str:
     html = requests.get(link, timeout=10).text
     soup = BeautifulSoup(html, "html.parser")
@@ -104,32 +89,3 @@ def upload_summary_blob(container: ContainerClient, title: str, summary: str, li
     content = f"# {title}\n\n{summary}\n\n[記事URL]({link})"
     blob_client.upload_blob(content, overwrite=True)
     return filename
-
-
-def insert_table_entity(table_client, partition_key: str, row_key: str, title: str, url: str) -> None:
-    entity = TableEntity()
-    entity["PartitionKey"] = partition_key
-    entity["RowKey"] = row_key
-    entity["Title"] = title
-    entity["Url"] = url
-    entity["Created"] = datetime.datetime.utcnow().isoformat()
-    table_client.create_entity(entity=entity)
-
-
-def send_notification(sendgrid_api_key: Optional[str], notify_to: Optional[str], new_summaries: List[str]) -> bool:
-    if not new_summaries or not sendgrid_api_key or not notify_to:
-        return False
-    summary_text = "\n".join(new_summaries)
-    message = Mail(
-        from_email="azure-functions@newsbot.com",
-        to_emails=notify_to,
-        subject="📰 新しいAI技術ニュース要約が追加されました",
-        plain_text_content=f"以下の記事が新しく要約されました。\n\n{summary_text}",
-    )
-    try:
-        sg = SendGridAPIClient(sendgrid_api_key)
-        sg.send(message)
-        return True
-    except Exception as e:
-        logging.error(f"メール送信失敗: {e}")
-        return False

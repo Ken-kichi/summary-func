@@ -1,4 +1,3 @@
-```json
 {
   "IsEncrypted": false,
   "Values": {
@@ -13,4 +12,3 @@
     "NOTIFY_TO": "<通知先メールアドレス>"
   }
 }
-```
