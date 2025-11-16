@@ -1,15 +1,15 @@
 import datetime
 import logging
-from typing import List, Optional
+from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
-from openai import AzureOpenAI
+from openai import OpenAI
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.data.tables import TableServiceClient
 
 
-def search_bring_news(query: str, bing_key: Optional[str]) -> Optional[List[dict]]:
+def search_bring_news(query: str, bing_key: Optional[str]) -> Optional[list[dict]]:
     if not bing_key:
         logging.error("Bing API key is not set.")
         return None
@@ -26,15 +26,11 @@ def search_bring_news(query: str, bing_key: Optional[str]) -> Optional[List[dict
     return articles
 
 
-def get_openai_client(api_key: str, endpoint: str, deployment_name: str = "gpt-5-mini", api_version: str = "2024-06-01") -> AzureOpenAI:
-    client = AzureOpenAI(
-        api_key=api_key,
-        endpoint=endpoint,
-        deployment_name=deployment_name,
-        api_version=api_version,
+def get_ai_client(api_key: str, endpoint: str,) -> OpenAI:
+    client = OpenAI(
+        base_url=f"{endpoint}",
+        api_key=api_key
     )
-    # attach deployment name for later use
-    setattr(client, "_deployment_name", deployment_name)
     return client
 
 
@@ -70,7 +66,7 @@ def get_article_content(link: str) -> str:
     return text
 
 
-def get_summary(openai_client: AzureOpenAI, content: str) -> str:
+def get_summary(openai_client: OpenAI, content: str) -> str:
     # use the attached deployment name if present
     model_name = getattr(openai_client, "_deployment_name", "gpt-5-mini")
     prompt = f"Please summarize the following article into three paragraphs in Markdown format.\n\n{content[:8000]}"

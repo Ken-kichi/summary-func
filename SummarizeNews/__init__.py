@@ -1,33 +1,35 @@
-from datetime import datetime
 import logging
 import os
 import azure.functions as func
 from .util import (
     search_bring_news,
-    get_openai_client,
+    get_ai_client,
     get_article_content,
     get_blob_container,
     ensure_container,
     get_summary,
     upload_summary_blob,
 )
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def main(mytimer: func.TimerRequest) -> None:
     logging.info("Start SummaryNews function")
 
     bing_key = os.getenv("BING_API_KEY")
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    openai_endpoint = os.getenv("OPENAI_ENDPOINT")
+    api_key = os.getenv("AI_API_KEY")
+    ai_endpoint = os.getenv("AI_ENDPOINT")
     blob_connection_string = os.getenv("BLOB_CONNECTION_STRING")
-    container_name = "news-summaries"
+    container_name = os.getenv("BLOB_CONTAINER_NAME")
 
     articles = search_bring_news("latest technology news", bing_key)
     if not articles:
         logging.info("No news articles found.")
         return
 
-    openai_client = get_openai_client(openai_api_key, openai_endpoint)
+    ai_client = get_ai_client(api_key, ai_endpoint)
 
     container = get_blob_container(blob_connection_string, container_name)
     ensure_container(container)
@@ -47,7 +49,7 @@ def main(mytimer: func.TimerRequest) -> None:
             continue
 
         try:
-            summary = get_summary(openai_client, text)
+            summary = get_summary(ai_client, text)
         except Exception as e:
             logging.error(f"OpenAI summarization failed: {e}")
             continue
