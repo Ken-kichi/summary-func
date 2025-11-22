@@ -66,9 +66,10 @@ powershell -ExecutionPolicy Bypass -File scripts/env_to_tfvars.ps1
 
 ```bash
 # secret.tfvars ファイルを作成（Git から除外）
+# 注意: 本番環境では以下のテンプレートを使用し、実際の値に置き換えてください
 cat > terraform/secret.tfvars << 'EOF'
 openai_api_key = "YOUR_OPENAI_API_KEY_HERE"
-openai_endpoint = "https://poti1-mi8uf9zs-eastus2.cognitiveservices.azure.com/"
+openai_endpoint = "YOUR_OPENAI_ENDPOINT_HERE"
 openai_model = "gpt-5.1-chat"
 api_version = "2024-12-01-preview"
 EOF

@@ -28,3 +28,7 @@ logs/
 
 # Node modules (for mermaid-cli)
 node_modules/
+
+# Terraform state files (contain secrets)
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
