@@ -9,3 +9,26 @@ wheels/
 # Virtual environments
 .venv
 .env
+*.tfvars
+!terraform/terraform.tfvars.example
+terraform/secret.tfvars*
+.terraform/
+.terraform.lock.hcl
+*.info
+local.settings.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+logs/
+
+# Node modules (for mermaid-cli)
+node_modules/
+
+# Terraform state files (contain secrets)
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup

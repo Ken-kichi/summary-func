@@ -17,6 +17,10 @@ azure-functions==1.24.0
 azure-storage-blob==12.27.1
     # via news-summarizer-p (pyproject.toml)
 beautifulsoup4==4.14.2
+    # via
+    #   news-summarizer-p (pyproject.toml)
+    #   bs4
+bs4==0.0.2
     # via news-summarizer-p (pyproject.toml)
 certifi==2025.11.12
     # via
@@ -67,6 +71,8 @@ pydantic==2.12.4
     # via openai
 pydantic-core==2.41.5
     # via pydantic
+python-dotenv==1.2.1
+    # via news-summarizer-p (pyproject.toml)
 python-http-client==3.3.7
     # via sendgrid
 requests==2.32.5
