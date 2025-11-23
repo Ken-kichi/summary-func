@@ -168,7 +168,14 @@ async function downloadDiagramByIndex(index) {
             document.getElementById('diagramMenu').style.display = 'none';
         } else {
             const data = await response.json();
-            alert(data.error);
+            
+            // Azure 環境では mmdc が利用できないため、ブラウザ側での変換を提案
+            if (response.status === 501 && data.available_on_local) {
+                const message = `このサーバー環境では PNG 変換が利用できません。\n\n以下の代替方法をお試しください：\n\n1. 【推奨】Mermaid Live Editor を使用：\n   https://mermaid.live/\n\n   Mermaid コードをコピーペーストして、PNG で保存\n\n2. ローカル環境で実行する\n\n図解データはブラウザに保存されています。`;
+                alert(message);
+            } else {
+                alert(`エラー: ${data.error}`);
+            }
         }
     } catch (error) {
         alert(`エラーが発生しました: ${error.message}`);

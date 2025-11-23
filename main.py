@@ -115,13 +115,28 @@ def extract_mermaid():
 
 @app.route('/convert-mermaid-png', methods=['POST'])
 def convert_mermaid_png():
+    """
+    Mermaidコードを PNG に変換
+    ※ Azure App Service では mmdc が利用できないため、ブラウザ側で処理することを推奨
+    """
     try:
+        import shutil
+        
         data = request.json
         mermaid_code = data.get('mermaid_code', '')
         diagram_index = data.get('diagram_index', 0)
 
         if not mermaid_code:
             return jsonify({'error': 'mermaidコードが見つかりません'}), 400
+
+        # mmdc コマンドが利用可能か確認
+        mmdc_path = shutil.which('mmdc')
+        if not mmdc_path:
+            return jsonify({
+                'error': 'Mermaid CLI がこの環境では利用できません。ローカル環境でのみ使用可能です。',
+                'available_on_local': True,
+                'mermaid_code': mermaid_code
+            }), 501  # Not Implemented
 
         # 一時ファイルを作成
         with tempfile.NamedTemporaryFile(mode='w', suffix='.mmd', delete=False) as f:
@@ -161,8 +176,6 @@ def convert_mermaid_png():
 
     except subprocess.CalledProcessError as e:
         return jsonify({'error': f'mermaid変換エラー: {e.stderr.decode() if e.stderr else str(e)}'}), 500
-    except FileNotFoundError:
-        return jsonify({'error': 'mmdc (mermaid-cli) がインストールされていません。「npm install -g @mermaid-js/mermaid-cli」を実行してください。'}), 500
     except Exception as e:
         return jsonify({'error': f'エラーが発生しました: {str(e)}'}), 500
 
