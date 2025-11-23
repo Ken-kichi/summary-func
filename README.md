@@ -96,7 +96,7 @@ git clone <repository-url>
 cd news-summarizer-p
 
 # 仮想環境を作成・有効化
-python3 -m venv .venv
+uv venv
 source .venv/bin/activate  # Mac/Linux
 # または
 .venv\Scripts\activate  # Windows
