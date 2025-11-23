@@ -1,4 +1,4 @@
-name: Build and deploy Python app to Azure App Service
+name: Build and deploy Python app to Azure Web App - news-summarizer-app
 
 on:
   push:
@@ -6,93 +6,60 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  AZURE_APP_NAME: 'news-summarizer-app'
-  PYTHON_VERSION: '3.11'
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python version
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          python-version: '3.11'
 
-      - name: Create virtual environment
+      - name: Install dependencies
         run: |
-          python -m venv venv
-          source venv/bin/activate
-
-      - name: Upgrade pip and install dependencies
-        run: |
-          source venv/bin/activate
-          python -m pip install --upgrade pip
+          python -m venv antenv
+          source antenv/bin/activate
           pip install -r requirements.txt
-
-      - name: Run tests (optional)
-        run: |
-          source venv/bin/activate
-          # pytest や他のテストコマンドをここに追加
-        continue-on-error: true
-
-      - name: Check Python syntax
-        run: |
-          source venv/bin/activate
-          pip install flake8
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        continue-on-error: true
-
-      - name: Upload artifact for deployment
-        uses: actions/upload-artifact@v3
+      - name: Upload artifact for deployment jobs
+        uses: actions/upload-artifact@v4
         with:
           name: python-app
           path: |
             .
-            !venv/
-            !.venv/
-            !.git/
-            !.env
-
+            !antenv/
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Download artifact from build job
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: python-app
-          path: .
 
-      - name: Prepare for deployment
-        run: |
-          ls -la
-          echo "Deployment package ready"
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_28CB3E3328EB4E3896DD240927C792F2 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_128BA5EC54904CA3AEFB0BC19A4F5C9A }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_B9B2E02872414B8D9000CF6BCA4B8C1A }}
+
+      - name: Wait for SCM stability
+        run: sleep 30
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
-        id: deploy-to-webapp
         with:
-          app-name: ${{ env.AZURE_APP_NAME }}
+          app-name: 'news-summarizer-app'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .
 
-      - name: Health check
-        run: |
-          sleep 10
-          echo "Deployment completed successfully"
-
-      - name: Deployment summary
-        run: |
-          echo "✅ Deployment completed"
-          echo "App URL: ${{ steps.deploy-to-webapp.outputs.webapp-url }}"
+      - name: Wait for deployment completion
+        run: sleep 20s
