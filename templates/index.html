@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ニュース要約アプリ</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Mermaid.js for rendering diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <!-- html2canvas for converting SVG to PNG -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 
@@ -41,6 +45,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Hidden container for rendering mermaid diagrams -->
+    <div id="mermaidRenderContainer" style="display: none; position: absolute; left: -9999px;"></div>
 
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>

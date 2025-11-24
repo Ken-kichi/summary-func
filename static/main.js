@@ -143,19 +143,36 @@ async function downloadDiagramByIndex(index) {
     }
 
     try {
-        const response = await fetch('/convert-mermaid-png', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                mermaid_code: mermaidDiagrams[index],
-                diagram_index: index
-            })
+        const btn = event.target;
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = '変換中...';
+
+        // Mermaid コードを取得
+        const mermaidCode = mermaidDiagrams[index];
+
+        // ブラウザ側で Mermaid → SVG に変換してから PNG に
+        const svg = await renderMermaidToSvg(mermaidCode);
+
+        if (!svg) {
+            throw new Error('Mermaid のレンダリングに失敗しました');
+        }
+
+        // SVG を含む div を作成
+        const wrapper = document.createElement('div');
+        wrapper.style.backgroundColor = '#ffffff';
+        wrapper.style.display = 'inline-block';
+        wrapper.style.padding = '20px';
+        wrapper.appendChild(svg.cloneNode(true));
+
+        // HTML → PNG に変換
+        const canvas = await html2canvas(wrapper, {
+            backgroundColor: '#ffffff',
+            scale: 2
         });
 
-        if (response.ok) {
-            const blob = await response.blob();
+        // PNG をダウンロード
+        canvas.toBlob((blob) => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -164,22 +181,66 @@ async function downloadDiagramByIndex(index) {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
+
             // メニューを閉じる
             document.getElementById('diagramMenu').style.display = 'none';
-        } else {
-            const data = await response.json();
-            
-            // Azure 環境では mmdc が利用できないため、ブラウザ側での変換を提案
-            if (response.status === 501 && data.available_on_local) {
-                const message = `このサーバー環境では PNG 変換が利用できません。\n\n以下の代替方法をお試しください：\n\n1. 【推奨】Mermaid Live Editor を使用：\n   https://mermaid.live/\n\n   Mermaid コードをコピーペーストして、PNG で保存\n\n2. ローカル環境で実行する\n\n図解データはブラウザに保存されています。`;
-                alert(message);
-            } else {
-                alert(`エラー: ${data.error}`);
-            }
-        }
+
+            // ボタンを戻す
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }, 'image/png');
+
     } catch (error) {
-        alert(`エラーが発生しました: ${error.message}`);
+        console.error('Mermaid 変換エラー:', error);
+        alert(`図解の変換に失敗しました: ${error.message}`);
+        const btn = event.target;
+        btn.disabled = false;
+        btn.textContent = `図解 ${index + 1} をダウンロード`;
     }
+}
+
+/**
+ * Mermaid コードを SVG 要素に変換
+ */
+async function renderMermaidToSvg(mermaidCode) {
+    return new Promise((resolve, reject) => {
+        try {
+            // 一意の ID を生成
+            const uniqueId = `mermaid-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+            // 隠れたコンテナに Mermaid を描画
+            const container = document.getElementById('mermaidRenderContainer');
+            const div = document.createElement('div');
+            div.id = uniqueId;
+            div.innerHTML = `<div class="mermaid" style="display: inline-block; background-color: #ffffff; padding: 20px;">${mermaidCode}</div>`;
+
+            container.appendChild(div);
+
+            // Mermaid にレンダリング
+            mermaid.contentLoaderBuild().then(() => {
+                setTimeout(() => {
+                    const svg = div.querySelector('svg');
+                    if (svg) {
+                        resolve(svg);
+                    } else {
+                        reject(new Error('SVG が生成されませんでした'));
+                    }
+
+                    // 少し後にクリーンアップ
+                    setTimeout(() => {
+                        if (container.contains(div)) {
+                            container.removeChild(div);
+                        }
+                    }, 100);
+                }, 100);
+            }).catch((err) => {
+                reject(new Error(`Mermaid レンダリングエラー: ${err.message}`));
+            });
+
+        } catch (error) {
+            reject(error);
+        }
+    });
 }
 
 document.getElementById('newsInput').addEventListener('keydown', function (e) {

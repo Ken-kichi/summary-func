@@ -121,7 +121,7 @@ def convert_mermaid_png():
     """
     try:
         import shutil
-        
+
         data = request.json
         mermaid_code = data.get('mermaid_code', '')
         diagram_index = data.get('diagram_index', 0)
