@@ -6,10 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ニュース要約アプリ</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Mermaid.js for rendering diagrams -->
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <!-- html2canvas for converting SVG to PNG -->
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- pako 圧縮用（Mermaid Live 用） -->
+    <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 
@@ -34,20 +33,14 @@
                 <div class="button-group">
                     <button class="btn-secondary" id="downloadBtn" onclick="downloadMarkdown()"
                         disabled>Markdownをダウンロード</button>
-                    <button class="btn-secondary" id="downloadDiagramBtn" onclick="showDiagramMenu()" disabled
-                        style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.5), rgba(59, 130, 246, 0.5));">図をPNGで保存</button>
-                </div>
-                <div id="diagramMenu"
-                    style="display: none; margin-top: 12px; padding: 12px; background: rgba(255, 255, 255, 0.1); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2);">
-                    <p style="color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-size: 14px;">図解を選択:</p>
-                    <div id="diagramButtonsContainer" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                    <button class="btn-secondary" id="downloadDiagramBtn" onclick="openMermaidLive()" disabled
+                        style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.5), rgba(59, 130, 246, 0.5));">
+                        Mermaid Editor で開く
+                    </button>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Hidden container for rendering mermaid diagrams -->
-    <div id="mermaidRenderContainer" style="display: none; position: absolute; left: -9999px;"></div>
 
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
