@@ -50,13 +50,21 @@ git clone <repository-url>
 cd news-summarizer-p
 
 # 2. Python 環境をセットアップ（Python 3.10+）
-python3 -m venv .venv
+# 推奨: uv で仮想環境を構築
+uv venv .venv
 source .venv/bin/activate  # macOS/Linux
 # または
 .venv\Scripts\activate  # Windows
 
+# uv を使わない場合（従来の venv）
+# python3 -m venv .venv && source .venv/bin/activate
+
 # 3. 依存パッケージをインストール
-pip install -r requirements.txt
+# プロジェクトの公式フロー: uv のロックファイルに合わせて同期
+uv pip sync
+
+# pip を使う場合の代替手順
+# pip install -r requirements.txt
 
 # 4. 図解機能に必要な Mermaid CLI をインストール
 npm install -g @mermaid-js/mermaid-cli
@@ -67,12 +75,36 @@ npm install -g @mermaid-js/mermaid-cli
 # - SUBSCRIPTION_KEY: API キー
 # - MODEL_NAME: デプロイされたモデル名
 # - API_VERSION: API バージョン
+cat <<'EOF' > .env
+ENDPOINT="https://your-resource.openai.azure.com/"
+SUBSCRIPTION_KEY="your-api-key"
+MODEL_NAME="gpt-4o-mini"
+API_VERSION="2024-02-15-preview"
+DEVELOPMENT=true
+FLASK_ENV=development
+EOF
 
 # 6. アプリケーション起動
 python main.py
 
 # ブラウザで http://localhost:5000 にアクセス
 ```
+
+> ℹ️ **uv を標準ツールとして採用**: ローカル開発では [Astral uv](https://github.com/astral-sh/uv) を用いて仮想環境と依存関係を一貫管理しています。`uv.lock` が常にソースと同期しているので、`uv pip sync` を実行するだけで本番と同じバージョン構成になります（pip で作業する場合は `requirements.txt` を利用してください）。
+
+> ℹ️ **Azure App Service では `mmdc` コマンドが利用できないため `/convert-mermaid-png` は 501 (Not Implemented) を返します。** PNG への変換はローカルマシンまたはブラウザで行ってください。詳細は `MERMAID_ERROR_SOLUTION.md` を参照してください。
+
+## ⚙️ 環境変数リファレンス
+
+| 変数名 | 必須 | 説明 |
+|--------|------|------|
+| `ENDPOINT` | ✅ | Azure OpenAI のエンドポイント URL。例: `https://xxx.openai.azure.com/` |
+| `SUBSCRIPTION_KEY` | ✅ | Azure OpenAI の API キー |
+| `MODEL_NAME` | ✅ | デプロイ済みモデルの名前 (例: `gpt-4o-mini`) |
+| `API_VERSION` | ✅ | 呼び出しに使用する API バージョン (例: `2024-02-15-preview`) |
+| `DEVELOPMENT` | 任意 | ローカルデバッグ用フラグ。`true` にすると Flask の挙動をローカル向けに統一できます |
+| `FLASK_ENV` | 任意 | Flask の実行モード。`development` でホットリロード有効 |
+| `PORT` | 任意 | ローカルサーバーの待受ポート (既定: `5000`) |
 
 ### Azure へのデプロイ (GitHub Actions × App Service)
 
@@ -113,7 +145,7 @@ az webapp config appsettings set \
 
 #### ステップ 2: GitHub Actions で自動デプロイを設定
 
-リポジトリに `.github/workflows/deploy.yml` を作成:
+リポジトリに `.github/workflows/deploy.yaml` を作成:
 
 ```yaml
 name: Deploy to Azure App Service
@@ -161,19 +193,27 @@ jobs:
 
 ```
 news-summarizer-p/
-├── main.py                    # Flask アプリケーション（エントリポイント）
+├── main.py                    # Flask アプリケーション（メインエントリ）
+├── app.py                     # Azure App Service 用の簡易 WSGI エントリ
+├── wsgi.py                    # Gunicorn 起動時に読み込まれる WSGI
+├── startup.sh                 # App Service カスタムスタートスクリプト
+├── requirements.txt           # pip 用依存定義
+├── pyproject.toml             # プロジェクトメタデータ
+├── uv.lock                    # uv 用ロックファイル
 ├── static/
-│   ├── main.js               # フロントエンド JavaScript
-│   └── styles.css            # スタイルシート
+│   ├── main.js                # フロントエンド JavaScript
+│   ├── styles.css             # スタイルシート
+│   └── unsplash.jpg           # ヒーローイメージ
 ├── templates/
-│   └── index.html            # HTML テンプレート
-├── pyproject.toml            # Python プロジェクト定義
-├── requirements.txt          # Python 依存パッケージ
-├── .env                      # 環境変数（ローカル開発用、Git除外）
+│   └── index.html             # HTML テンプレート
 ├── .github/workflows/
-│   └── deploy.yml           # GitHub Actions デプロイワークフロー
-├── README.md                 # このファイル
-└── Dockerfile               # コンテナイメージ定義（デプロイ用）
+│   └── deploy.yaml            # GitHub Actions デプロイワークフロー
+├── AZURE_SETUP.md             # Azure リソース構築ハンドブック
+├── FIX_AZURE_DEPLOYMENT.md    # デプロイ失敗時のトラブルシュート
+├── MERMAID_ERROR_SOLUTION.md  # Mermaid 変換のエラーハンドリング
+├── 有料記事_完全ガイド.md          # 有料記事向けの活用手引き
+├── web.config                 # Windows/IIS 用設定
+└── README.md                  # このファイル
 ```
 
 ## 🛠️ API エンドポイント
@@ -316,6 +356,6 @@ MIT License
 
 ---
 
-**最終更新:** 2025年11月23日
+**最終更新:** 2025年11月24日
 **バージョン:** 1.0.0
 **メンテナンス:** Ken-kichi
