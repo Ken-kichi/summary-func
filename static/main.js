@@ -1,119 +1,130 @@
+/**
+ * ニュース要約ページのフロント処理。
+ * jQuery を使い、フォーム送信・要約結果描画・Markdown ダウンロードを制御する。
+ */
 let currentSummary = '';
 let mermaidDiagrams = [];
 
-/* ===========================================================
-   要約処理
-   =========================================================== */
-async function summarize() {
-    const newsText = document.getElementById('newsInput').value.trim();
-    const outputDiv = document.getElementById('summaryOutput');
-    const summarizeBtn = document.getElementById('summarizeBtn');
-    const downloadBtn = document.getElementById('downloadBtn');
-    const downloadDiagramBtn = document.getElementById('downloadDiagramBtn');
+$(function () {
+    const $newsInput = $('#newsInput');
+    const $summaryOutput = $('#summaryOutput');
+    const $summarizeBtn = $('#summarizeBtn');
+    const $downloadBtn = $('#downloadBtn');
+    const $downloadDiagramBtn = $('#downloadDiagramBtn');
 
-    if (!newsText) {
-        outputDiv.innerHTML = '<div class="error">ニュースの本文を入力してください</div>';
-        return;
-    }
+    const setLoadingView = () => {
+        $summaryOutput.html(`
+            <div class="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">要約を生成中...</div>
+            </div>
+        `);
+    };
 
-    outputDiv.innerHTML = `
-        <div class="loading">
-            <div class="spinner"></div>
-            <div class="loading-text">要約を生成中...</div>
-        </div>
-    `;
-    summarizeBtn.disabled = true;
-    downloadBtn.disabled = true;
-    downloadDiagramBtn.disabled = true;
+    const resetButtons = () => {
+        $summarizeBtn.prop('disabled', false);
+        $downloadBtn.prop('disabled', !currentSummary);
+        $downloadDiagramBtn.prop('disabled', mermaidDiagrams.length === 0);
+    };
 
-    try {
-        const response = await fetch('/summarize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ news_text: newsText })
-        });
+    async function summarize() {
+        const newsText = $newsInput.val().trim();
 
-        const data = await response.json();
+        if (!newsText) {
+            $summaryOutput.html('<div class="error">ニュースの本文を入力してください</div>');
+            return;
+        }
 
-        if (response.ok) {
-            currentSummary = data.summary;
-            outputDiv.innerHTML = marked.parse(currentSummary);
-            downloadBtn.disabled = false;
+        setLoadingView();
+        $summarizeBtn.prop('disabled', true);
+        $downloadBtn.prop('disabled', true);
+        $downloadDiagramBtn.prop('disabled', true);
 
-            // Mermaid 図解抽出
-            const extractResponse = await fetch('/extract-mermaid', {
+        try {
+            const data = await $.ajax({
+                url: '/summarize',
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ summary: currentSummary })
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify({ news_text: newsText }),
+                processData: false
             });
 
-            if (extractResponse.ok) {
-                const extractData = await extractResponse.json();
-                mermaidDiagrams = extractData.mermaid_diagrams;
+            currentSummary = data.summary || '';
+            $summaryOutput.html(marked.parse(currentSummary));
+            $downloadBtn.prop('disabled', !currentSummary);
+
+            try {
+                const extractData = await $.ajax({
+                    url: '/extract-mermaid',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    data: JSON.stringify({ summary: currentSummary }),
+                    processData: false
+                });
+
+                mermaidDiagrams = extractData.mermaid_diagrams || [];
 
                 if (mermaidDiagrams.length > 0) {
-                    downloadDiagramBtn.disabled = false;
-                    downloadDiagramBtn.textContent = `Mermaid Editor を開く`;
+                    $downloadDiagramBtn
+                        .prop('disabled', false)
+                        .text('Mermaid Editor を開く');
                 }
+            } catch (extractError) {
+                console.error('Mermaid extraction failed', extractError);
             }
-        } else {
-            outputDiv.innerHTML = `<div class="error">${data.error}</div>`;
+        } catch (error) {
+            const message = error?.responseJSON?.error || error?.statusText || 'エラーが発生しました';
+            $summaryOutput.html(`<div class="error">${message}</div>`);
+        } finally {
+            resetButtons();
+        }
+    }
+
+    async function downloadMarkdown() {
+        if (!currentSummary) {
+            alert('要約がありません');
+            return;
         }
 
-    } catch (error) {
-        outputDiv.innerHTML = `<div class="error">エラーが発生しました: ${error.message}</div>`;
-    } finally {
-        summarizeBtn.disabled = false;
-    }
-}
+        try {
+            const blob = await $.ajax({
+                url: '/download',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ summary: currentSummary }),
+                processData: false,
+                xhrFields: { responseType: 'blob' }
+            });
 
-/* ===========================================================
-   Markdown ダウンロード
-   =========================================================== */
-async function downloadMarkdown() {
-    if (!currentSummary) {
-        alert('要約がありません');
-        return;
-    }
-
-    try {
-        const response = await fetch('/download', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ summary: currentSummary })
-        });
-
-        if (response.ok) {
-            const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'news_summary.md';
-            document.body.appendChild(a);
-            a.click();
+            const $tempLink = $('<a>', {
+                href: url,
+                download: 'news_summary.md',
+                style: 'display:none'
+            }).appendTo('body');
+
+            $tempLink[0].click();
+            $tempLink.remove();
             window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } else {
-            const data = await response.json();
-            alert(data.error);
+        } catch (error) {
+            const message = error?.responseJSON?.error || 'エラーが発生しました';
+            alert(message);
         }
-    } catch (error) {
-        alert(`エラーが発生しました: ${error.message}`);
     }
-}
 
-/* ===========================================================
-   Mermaid Editor を開くだけ
-   =========================================================== */
-function openMermaidLive() {
-    window.open("https://mermaid.live/edit", "_blank");
-}
-
-/* ===========================================================
-   Ctrl + Enter で要約実行
-   =========================================================== */
-document.getElementById('newsInput').addEventListener('keydown', function (e) {
-    if (e.ctrlKey && e.key === 'Enter') {
-        summarize();
+    function openMermaidLive() {
+        window.open('https://mermaid.live/edit', '_blank');
     }
+
+    $summarizeBtn.on('click', summarize);
+    $downloadBtn.on('click', downloadMarkdown);
+    $downloadDiagramBtn.on('click', openMermaidLive);
+
+    $newsInput.on('keydown', function (e) {
+        if (e.ctrlKey && e.key === 'Enter') {
+            summarize();
+        }
+    });
 });
