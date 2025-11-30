@@ -32,7 +32,7 @@ def summarize():
         news_text = data.get('news_text', '')
 
         if not news_text:
-            return jsonify({'error': 'ニュースの本文を入力してください'}), 400
+            return jsonify({'error': 'Please enter the full news article text.'}), 400
 
         model = AzureChatOpenAI(
             api_version=API_VERSION,
@@ -41,14 +41,14 @@ def summarize():
             model_name=MODEL_NAME
         )
 
-        template = """以下のニュース記事を要約してください。要約はMarkdown形式で出力してください。
-            要約には以下の要素を含めてください：
-            - タイトル（見出し1）
-            - 要点（箇条書き）
-            - 詳細な要約（段落形式）
-            - mermaidで記事の内容を図解
+        template = """Summarize the following news article in Markdown format.
+            Include the elements below in your response:
+            - Title (Heading 1)
+            - Key points (bullet list)
+            - Detailed summary (paragraph form)
+            - A Mermaid diagram that illustrates the article
 
-            ニュース記事：
+            News article:
             {news_text}"""
 
         system_prompt = SystemMessagePromptTemplate.from_template(template)
@@ -63,7 +63,7 @@ def summarize():
         return jsonify({'summary': summary})
 
     except Exception as e:
-        return jsonify({'error': f'エラーが発生しました: {str(e)}'}), 500
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
 @app.route('/download', methods=['POST'])
@@ -73,9 +73,9 @@ def download():
         summary = data.get('summary', '')
 
         if not summary:
-            return jsonify({'error': '要約が見つかりません'}), 400
+            return jsonify({'error': 'Summary not found.'}), 400
 
-        # Markdownファイルとしてダウンロード
+        # Download as a Markdown file
         buffer = BytesIO()
         buffer.write(summary.encode('utf-8'))
         buffer.seek(0)
@@ -88,12 +88,12 @@ def download():
         )
 
     except Exception as e:
-        return jsonify({'error': f'エラーが発生しました: {str(e)}'}), 500
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
     import sys
-    # Azure App Service での実行に対応
+    # Support execution on Azure App Service
     port = int(os.environ.get('PORT', 5000))
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
     app.run(host='0.0.0.0', port=port, debug=debug_mode)

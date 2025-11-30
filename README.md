@@ -233,7 +233,7 @@ news-summarizer-p/
 ├── AZURE_SETUP.md             # Azure provisioning guide
 ├── FIX_AZURE_DEPLOYMENT.md    # Deployment troubleshooting
 ├── MERMAID_ERROR_SOLUTION.md  # Mermaid fallback tips
-├── 有料記事_完全ガイド.md          # Japanese premium article guide
+├── premium_article_full_guide.md  # Comprehensive how-to guide
 ├── web.config                 # Windows/IIS config
 └── README.md                  # This file
 ```

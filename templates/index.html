@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ニュース要約アプリ</title>
+    <title>News Summarizer</title>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- pako 圧縮用（Mermaid Live 用） -->
+    <!-- pako compression (used for Mermaid Live) -->
     <script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.js"
         integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4=" crossorigin="anonymous"></script>
@@ -16,27 +16,27 @@
 
 <body>
     <div class="container">
-        <h1>📰 ニュース要約アプリ</h1>
+        <h1>📰 News Summarizer</h1>
 
         <div class="main-content">
             <div class="panel">
-                <h2>ニュース本文を入力</h2>
-                <textarea id="newsInput" placeholder="ニュースの全文をここに貼り付けてください..."></textarea>
+                <h2>Enter the news article</h2>
+                <textarea id="newsInput" placeholder="Paste the full article text here..."></textarea>
                 <div class="button-group">
-                    <button class="btn-primary" id="summarizeBtn">要約する</button>
+                    <button class="btn-primary" id="summarizeBtn">Summarize</button>
                 </div>
             </div>
 
             <div class="panel">
-                <h2>要約結果</h2>
+                <h2>Summary</h2>
                 <div id="summaryOutput">
-                    <div class="placeholder">要約結果がここに表示されます</div>
+                    <div class="placeholder">The summary will appear here</div>
                 </div>
                 <div class="button-group">
-                    <button class="btn-secondary" id="downloadBtn" disabled>Markdownをダウンロード</button>
+                    <button class="btn-secondary" id="downloadBtn" disabled>Download as Markdown</button>
                     <button class="btn-secondary" id="downloadDiagramBtn" disabled
                         style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.5), rgba(59, 130, 246, 0.5));">
-                        Mermaid Editor で開く
+                        Open in Mermaid Editor
                     </button>
                 </div>
             </div>

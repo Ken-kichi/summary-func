@@ -1,18 +1,17 @@
-# Web App が表示されない問題の解決ガイド
+# Guide: Fixing "Web App Not Showing" on Azure
 
-## 🔧 実装した修正内容
+## 🔧 Summary of Implemented Fixes
 
-Azure App Service でアプリケーションが表示されない問題を解決するため、以下のファイルを追加・修正しました。
+To resolve the issue where the Azure App Service failed to render the application, the following files were added or updated.
 
-### 1. **main.py** - ホスト・ポート設定を修正
+### 1. **main.py** – Host/Port configuration
 
-**変更内容**:
 ```python
-# 修正前
+# Before
 if __name__ == '__main__':
     app.run(debug=True)
 
-# 修正後
+# After
 if __name__ == '__main__':
     import sys
     port = int(os.environ.get('PORT', 5000))
@@ -20,14 +19,14 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=port, debug=debug_mode)
 ```
 
-**理由**:
-- `host='0.0.0.0'` : Azure App Service の全インターフェースをリッスン
-- `PORT` 環境変数 : Azure が自動的に割り当てるポート番号に対応
-- `debug_mode` : 本番環境ではデバッグモードを無効化
+**Why**
+- `host='0.0.0.0'`: Listen on every interface Azure exposes
+- `PORT`: Align with the dynamic port assigned by Azure
+- `debug_mode`: Keep debug disabled in production
 
-### 2. **wsgi.py** - 新規作成
+### 2. **wsgi.py** – New file
 
-WSGI アプリケーションサーバー（Gunicorn）用のエントリポイント
+WSGI entry point for Gunicorn:
 
 ```python
 import logging
@@ -42,9 +41,9 @@ if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
 ```
 
-### 3. **app.py** - 新規作成
+### 3. **app.py** – New file
 
-代替エントリポイント
+Alternative entry point for App Service.
 
 ```python
 from main import app
@@ -53,7 +52,7 @@ if __name__ == '__main__':
     app.run()
 ```
 
-### 4. **requirements.txt** - Flask と Gunicorn を追加
+### 4. **requirements.txt** – Added Flask and Gunicorn
 
 ```
 Flask==3.1.2
@@ -62,11 +61,11 @@ langchain==1.0.8
 langchain-openai==1.0.3
 ```
 
-### 5. **web.config** - 新規作成（Windows Server IIS 設定）
+### 5. **web.config** – New file (Windows/IIS settings)
 
-Azure App Service 上で静的ファイルを正しく提供するための IIS 設定
+Ensures static files are served correctly when hosted on Azure App Service for Windows.
 
-### 6. **startup.sh** - 新規作成（起動スクリプト）
+### 6. **startup.sh** – New file (startup script)
 
 ```bash
 #!/bin/bash
@@ -76,83 +75,80 @@ gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 wsgi:app
 
 ---
 
-## 🚀 Azure Portal での設定手順
+## 🚀 Configure the Azure Portal
 
-### Step 1: スタートアップコマンドを設定
+### Step 1: Set the startup command
 
-1. **Azure Portal** → **App Service** （`news-summarizer-app`）を開く
-2. 左メニュー → **構成** をクリック
-3. **一般設定** タブをクリック
-4. **スタートアップコマンド** に以下を入力：
+1. **Azure Portal** → **App Service** (`news-summarizer-app`)
+2. Left menu → **Configuration**
+3. Open the **General settings** tab
+4. Enter the startup command:
+   ```
+   gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 wsgi:app
+   ```
+5. Click **Save**
+6. Restart the App Service
 
-```
-gunicorn --bind 0.0.0.0:8000 --workers 4 --timeout 120 wsgi:app
-```
-
-5. **保存** をクリック
-6. App Service を **再起動**
-
-### Step 2: 変更をコミットして GitHub にプッシュ
+### Step 2: Commit and push changes to GitHub
 
 ```bash
-# ディレクトリに移動
+# Move into the project directory
 cd /Users/nakashimakengo/Desktop/news-summarizer-p
 
-# 仮想環境をアクティベート
+# Activate the virtual environment
 source .venv/bin/activate
 
-# 変更をコミット
+# Commit the changes
 git commit -m "Fix Azure App Service deployment - Add Gunicorn and WSGI support"
 
-# GitHub にプッシュ
+# Push to GitHub
 git push origin main
 ```
 
-### Step 3: GitHub Actions の自動デプロイを確認
+### Step 3: Confirm the GitHub Actions deployment
 
-1. GitHub リポジトリ → **Actions** タブをクリック
-2. 新しいワークフロー実行を確認
-3. ✅ **build** と **deploy** ジョブが成功するのを待つ
+1. GitHub repository → **Actions** tab
+2. Confirm a new workflow run has started
+3. Wait for the ✅ **build** and **deploy** jobs to finish
 
-### Step 4: アプリケーションにアクセス
+### Step 4: Access the application
 
-1. Azure Portal → App Service → **概要**
-2. **URL** をクリックしてアプリにアクセス
+1. Azure Portal → App Service → **Overview**
+2. Click the **URL** to verify the app loads
 
-✅ これでアプリが表示されるはずです！
+✅ The application should now render correctly.
 
 ---
 
-## 🔍 トラブルシューティング
+## 🔍 Troubleshooting
 
-### アプリがまだ表示されない場合
+### If the app still does not show
 
-#### 1. ログを確認
+#### 1. Inspect logs
 
 ```bash
-# リアルタイムログ表示
 az webapp log tail --resource-group news-summarizer-rg --name news-summarizer-app
 ```
 
-#### 2. スタートアップコマンドが正しく設定されているか確認
+#### 2. Confirm the startup command
 
 ```bash
 az webapp config show --resource-group news-summarizer-rg --name news-summarizer-app | grep startup
 ```
 
-#### 3. 環境変数が全て設定されているか確認
+#### 3. Validate required environment variables
 
 ```bash
 az webapp config appsettings list --resource-group news-summarizer-rg --name news-summarizer-app
 ```
 
-出力に以下が含まれているか確認:
+Ensure the output includes:
 - `ENDPOINT`
 - `SUBSCRIPTION_KEY`
 - `MODEL_NAME`
 - `API_VERSION`
 
-#### 4. App Service を再起動
+#### 4. Restart the App Service
 
 ```bash
 az webapp restart --resource-group news-summarizer-rg --name news-summarizer-app
@@ -160,33 +156,31 @@ az webapp restart --resource-group news-summarizer-rg --name news-summarizer-app
 
 ---
 
-## 📋 チェックリスト
+## 📋 Deployment Checklist
 
-デプロイが完了したら、以下を確認してください：
+Confirm these items once deployment completes:
 
-- [ ] スタートアップコマンドが設定されている
-- [ ] GitHub Actions が成功している（✅ マーク）
-- [ ] 環境変数が全て設定されている
-- [ ] `wsgi.py` ファイルが Githab にアップロードされている
-- [ ] `requirements.txt` に Flask と Gunicorn が含まれている
-- [ ] App Service ログにエラーがない
-- [ ] Web App の URL にアクセスしてアプリが表示されている
-
----
-
-## ✅ 成功の兆候
-
-以下が確認できたら、完全にセットアップが完了しています：
-
-1. ✅ Azure App Service の URL にアクセスするとアプリが表示される
-2. ✅ ニュース本文を入力して「要約する」ボタンをクリックすると要約が生成される
-3. ✅ 「Markdownをダウンロード」でファイルがダウンロードされる
-4. ✅ ログに `DEBUG` または `INFO` レベルのログのみ表示される
+- [ ] Startup command configured
+- [ ] GitHub Actions workflow succeeded (✅ badge)
+- [ ] All required environment variables exist
+- [ ] `wsgi.py` committed to GitHub
+- [ ] `requirements.txt` includes Flask and Gunicorn
+- [ ] No errors in the App Service logs
+- [ ] Web App URL renders the application
 
 ---
 
-## 📞 さらにサポートが必要な場合
+## ✅ Signs of Success
 
-- **Azure CLI ドキュメント**: https://learn.microsoft.com/en-us/cli/azure/
-- **Flask ドキュメント**: https://flask.palletsprojects.com/
-- **Gunicorn ドキュメント**: https://docs.gunicorn.org/
+1. ✅ The Azure App Service URL loads the app
+2. ✅ Clicking **Summarize** after entering news text returns a summary
+3. ✅ **Download as Markdown** returns a file
+4. ✅ Logs contain only `DEBUG` or `INFO` level entries
+
+---
+
+## 📞 Need more help?
+
+- **Azure CLI Docs**: https://learn.microsoft.com/en-us/cli/azure/
+- **Flask Docs**: https://flask.palletsprojects.com/
+- **Gunicorn Docs**: https://docs.gunicorn.org/

@@ -18,7 +18,7 @@ body {
     overflow-x: hidden;
 }
 
-/* 背景のオーバーレイ（コントラスト向上のため） */
+/* Background overlay to improve contrast */
 body::before {
     content: '';
     position: fixed;

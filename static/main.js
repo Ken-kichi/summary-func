@@ -1,6 +1,6 @@
 /**
- * ニュース要約ページのフロント処理。
- * jQuery を使い、フォーム送信・要約結果描画・Markdown ダウンロードを制御する。
+ * Front-end logic for the news summarizer page.
+ * Uses jQuery to handle form submission, render the summary, and manage Markdown downloads.
  */
 let currentSummary = '';
 let mermaidDiagrams = [];
@@ -16,7 +16,7 @@ $(function () {
         $summaryOutput.html(`
             <div class="loading">
                 <div class="spinner"></div>
-                <div class="loading-text">要約を生成中...</div>
+                <div class="loading-text">Generating summary...</div>
             </div>
         `);
     };
@@ -31,7 +31,7 @@ $(function () {
         const newsText = $newsInput.val().trim();
 
         if (!newsText) {
-            $summaryOutput.html('<div class="error">ニュースの本文を入力してください</div>');
+            $summaryOutput.html('<div class="error">Please enter the news article text.</div>');
             return;
         }
 
@@ -69,13 +69,13 @@ $(function () {
                 if (mermaidDiagrams.length > 0) {
                     $downloadDiagramBtn
                         .prop('disabled', false)
-                        .text('Mermaid Editor を開く');
+                        .text('Open in Mermaid Editor');
                 }
             } catch (extractError) {
                 console.error('Mermaid extraction failed', extractError);
             }
         } catch (error) {
-            const message = error?.responseJSON?.error || error?.statusText || 'エラーが発生しました';
+            const message = error?.responseJSON?.error || error?.statusText || 'An error occurred.';
             $summaryOutput.html(`<div class="error">${message}</div>`);
         } finally {
             resetButtons();
@@ -84,7 +84,7 @@ $(function () {
 
     async function downloadMarkdown() {
         if (!currentSummary) {
-            alert('要約がありません');
+            alert('No summary found.');
             return;
         }
 
@@ -109,7 +109,7 @@ $(function () {
             $tempLink.remove();
             window.URL.revokeObjectURL(url);
         } catch (error) {
-            const message = error?.responseJSON?.error || 'エラーが発生しました';
+            const message = error?.responseJSON?.error || 'An error occurred.';
             alert(message);
         }
     }

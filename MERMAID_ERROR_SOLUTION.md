@@ -1,323 +1,285 @@
-# Mermaid CLI エラーの解決ガイド
+# Mermaid CLI Error Troubleshooting Guide
 
-## 🔴 エラーメッセージ
+## 🔴 Error Message
 
 ```
-mmdc (mermaid-cli) がインストールされていません。
-「npm install -g @mermaid-js/mermaid-cli」を実行してください。
+mmdc (mermaid-cli) is not installed.
+Please run: npm install -g @mermaid-js/mermaid-cli
 ```
 
-## ❓ なぜこのエラーが発生するのか？
+## ❓ Why this happens
 
-Azure App Service は、セキュリティとリソース管理上の理由により、グローバル npm パッケージの自動インストールをサポートしていません。
+Azure App Service does not support automatically installing global npm packages for security and resource-management reasons.
 
-- ❌ Azure 環境では `mmdc` コマンドが利用できない
-- ❌ `npm install -g` でのインストールは通常は失敗
-- ✅ ローカル環境では正常に動作
+- ❌ The `mmdc` command is unavailable in the default Azure environment
+- ❌ `npm install -g` normally fails on App Service
+- ✅ Local environments work without any issue
 
 ---
 
-## ✅ 解決方法（3パターン）
+## ✅ Three Ways to Resolve the Issue
 
-### パターン 1: ローカル環境で実行（推奨度 ⭐⭐⭐）
+### Option 1: Run locally (recommended ⭐⭐⭐)
 
-**最も簡単で確実な方法です。**
+**Easiest and most reliable.**
 
-ローカル開発環境でアプリを実行すれば、Mermaid 図解が正常に PNG に変換されます。
-
-#### 実行手順
+Run the application on your local machine and Mermaid diagrams convert to PNG without errors.
 
 ```bash
-# 1. プロジェクトディレクトリに移動
+# 1. Move into the project directory
 cd ~/Desktop/news-summarizer-p
 
-# 2. 仮想環境をアクティベート
+# 2. Activate the virtual environment
 source .venv/bin/activate
 
-# 3. ローカルで起動
+# 3. Start the app locally
 python main.py
 
-# 出力例:
+# Sample output:
 #  * Serving Flask app 'main'
 #  * Debug mode: on
 #  * Running on http://127.0.0.1:5000
 ```
 
-#### ブラウザでアクセス
+**Browser flow**
+1. Open `http://localhost:5000`
+2. Paste the news article → click **Summarize**
+3. Click **Save diagram as PNG**
+4. ✅ PNG file downloads successfully
 
-1. `http://localhost:5000` を開く
-2. ニュース本文を入力 → 「要約する」
-3. 「図をPNGで保存」ボタンをクリック
-4. ✅ PNG ファイルがダウンロード可能
+**Pros**
+- 🟢 Guaranteed to work
+- 🟢 No extra installs on Azure
+- 🟢 Easy to debug
+- 🟢 Works offline
 
-#### メリット
-
-- 🟢 確実に動作
-- 🟢 追加インストール不要
-- 🟢 デバッグが容易
-- 🟢 オフラインで利用可能
-
-#### デメリット
-
-- ⚠️ ローカル環境が必要
+**Cons**
+- ⚠️ Requires a local environment
 
 ---
 
-### パターン 2: Mermaid Live Editor を使用（推奨度 ⭐⭐⭐⭐）
+### Option 2: Use Mermaid Live Editor (recommended ⭐⭐⭐⭐)
 
-**オンラインツールを使用する最も実用的な方法です。**
+**Most practical online workaround.**
 
-Azure App Service でアプリを実行しつつ、図解はオンラインツールで処理します。
+Keep the app running on Azure App Service, but offload diagram rendering to the official Mermaid Live Editor.
 
-#### 実行手順
+1. **Open your Web App**
+   ```
+   https://[your-app-name].azurewebsites.net/
+   ```
+2. **Generate a summary**
+   - Paste article text → click **Summarize**
+   - The response includes Mermaid code blocks
+3. **Click the diagram button**
+   - Click **Save diagram as PNG**
+   - An error message appears (expected)
+4. **Open Mermaid Live Editor**
+   ```
+   https://mermaid.live/
+   ```
+5. **Paste the code**
+   - Copy the Mermaid block from the summary
+   - Paste into the editor
+   - The diagram renders automatically
+6. **Download the PNG**
+   - Click **Download** on the right pane
+   - PNG saves to your device
 
-**Step 1: Azure Web App でアプリを起動**
-```
-https://[your-app-name].azurewebsites.net/
-```
-
-**Step 2: ニュース要約を生成**
-- テキストを入力 → 「要約する」ボタンをクリック
-- 要約結果に Mermaid コードが含まれます
-
-**Step 3: 図解ボタンをクリック**
-- 「図をPNGで保存」をクリック
-- エラーメッセージが表示されます
-
-**Step 4: Mermaid Live Editor にアクセス**
-
-エラーメッセージ内のリンク、または以下にアクセス：
-```
-https://mermaid.live/
-```
-
-**Step 5: コードをペースト**
-- 要約結果から Mermaid コードをコピー
-- エディタにペースト
-- 図が自動的にレンダリング
-
-**Step 6: PNG をダウンロード**
-- 画面右側の **Download** ボタンをクリック
-- PNG ファイルが保存されます
-
-#### サンプル Mermaid コード
+**Sample Mermaid code**
 
 ```mermaid
 graph TD
-    A[新型AIチップ発表] -->|処理速度| B[従来比10倍]
-    B -->|価格| C[999ドルから]
-    C -->|リリース| D[来年上半期予定]
-    A -->|競合| E[Microsoft対抗製品開発中]
+    A[New AI chip announced] -->|Performance| B[10× faster than previous]
+    B -->|Price| C[Starting at $999]
+    C -->|Release| D[Ships in H1 next year]
+    A -->|Competition| E[Microsoft rival product in development]
 ```
 
-#### メリット
+**Pros**
+- 🟢 Works alongside the Azure-hosted app
+- 🟢 No installation required
+- 🟢 Powerful editing tools
+- 🟢 Export as PNG/SVG, share via URL
 
-- 🟢 Azure アプリと同時に利用可能
-- 🟢 インストール不要
-- 🟢 編集機能が充実
-- 🟢 複数形式でエクスポート可能（PNG, SVG など）
-- 🟢 URLで図を共有可能
-
-#### デメリット
-
-- ⚠️ インターネット接続が必要
-- ⚠️ 手動で Mermaid コードをコピペが必要
+**Cons**
+- ⚠️ Needs an internet connection
+- ⚠️ Requires manual copy/paste
 
 ---
 
-### パターン 3: Azure に npm をインストール（推奨度 ⭐）
+### Option 3: Install npm inside Azure (advanced ⭐)
 
-**上級向けの方法です。**
+**For advanced users only.**
 
-Azure App Service 内に npm をインストールすることで、mmdc を使用可能にできます。
+Install npm/mermaid-cli inside Azure App Service via Kudu so `mmdc` becomes available.
 
-#### 前提条件
+**Prerequisites**
+- Access to the Azure Kudu console
+- App Service plan must be **Standard tier or higher** (Free tier lacks storage)
 
-- Azure Kudu コンソールへのアクセス権
-- App Service が **Standard 以上** のプラン（Free では不可）
+**Steps**
+1. Open Kudu:
+   ```
+   https://[app-name].scm.azurewebsites.net/DebugConsole
+   ```
+2. Install mermaid-cli:
+   ```bash
+   npm install -g @mermaid-js/mermaid-cli
+   ```
+3. Verify installation:
+   ```bash
+   mmdc --version
+   # mermaid-cli 10.6.1
+   ```
+4. Restart the App Service (Portal or CLI):
+   ```bash
+   az webapp restart --resource-group news-summarizer-rg --name news-summarizer-app
+   ```
 
-#### 実行手順
+**Pros**
+- 🟢 Everything runs directly on Azure
+- 🟢 Transparent to end users
 
-**Step 1: Kudu コンソールにアクセス**
-
-```
-https://[app-name].scm.azurewebsites.net/DebugConsole
-```
-
-**Step 2: npm をインストール**
-
-```bash
-npm install -g @mermaid-js/mermaid-cli
-```
-
-**Step 3: インストール確認**
-
-```bash
-mmdc --version
-# mermaid-cli 10.6.1
-```
-
-**Step 4: App Service を再起動**
-
-Azure Portal から再起動するか：
-
-```bash
-az webapp restart --resource-group news-summarizer-rg --name news-summarizer-app
-```
-
-#### メリット
-
-- 🟢 Azure 上で完全に動作
-- 🟢 ユーザーにとって透過的
-
-#### デメリット
-
-- ⚠️ 複雑な設定が必要
-- ⚠️ 容量制限に達する可能性（Azure Free では不可）
-- ⚠️ 起動時間が増加
-- ⚠️ パフォーマンス低下の可能性
-- ⚠️ メンテナンスが複雑
+**Cons**
+- ⚠️ Setup is more complex
+- ⚠️ Storage limits (Free tier cannot handle it)
+- ⚠️ Longer cold-start times
+- ⚠️ Potential performance drop
+- ⚠️ Ongoing maintenance burden
 
 ---
 
-## 🎯 推奨フロー図
+## 🎯 Recommended Flow (diagram)
 
 ```
 ┌─────────────────────────────┐
-│ Azure Web App でニュース要約 │
+│ Summarize news on Azure Web │
 └──────────────┬──────────────┘
                │
         ┌──────▼──────┐
-        │ Mermaid図生成 │
+        │ Generate Mermaid │
         └──────┬──────┘
                │
         ┌──────▼──────┐
-        │ PNG変換が必要 │
+        │ Need PNG export │
         └──────┬──────┘
                │
     ┌──────────┼──────────┐
     │          │          │
-  【推奨】  【推奨】   【上級】
+ [Recommended][Recommended][Advanced]
     │          │          │
     ↓          ↓          ↓
 ┌────────┐ ┌─────────────────┐ ┌──────┐
-│ローカル │ │Mermaid Live Ed. │ │npm   │
-│実行    │ │                 │ │install│
+│ Local  │ │ Mermaid Live Ed. │ │ npm  │
+│ run    │ │                 │ │install│
 └────────┘ └─────────────────┘ └──────┘
     │          │          │
     └──────────┼──────────┘
                │
          ┌─────▼─────┐
-         │ PNG保存    │
+         │ Save PNG  │
          └───────────┘
 ```
 
 ---
 
-## 🧪 確認方法
+## 🧪 Validation Steps
 
-### Azure 環境での動作確認
+### On Azure
 
 ```bash
-# ログを確認してエラーを追跡
+# Stream logs to inspect errors
 az webapp log tail --resource-group news-summarizer-rg --name news-summarizer-app
 
-# 出力例:
-# INFO: mmdc コマンドが見つかりません - ローカル環境での利用を推奨
+# Example:
+# INFO: mmdc command not found - please use local environment
 ```
 
-### ローカル環境での動作確認
+### Locally
 
 ```bash
-# mmdc が正常にインストールされているか確認
+# Confirm mmdc is installed
 mmdc --version
 
-# 手動で Mermaid → PNG に変換
+# Manually convert Mermaid → PNG
 mmdc -i diagram.mmd -o diagram.png -s 2
 ```
 
 ---
 
-## 📋 トラブルシューティングチェックリスト
+## 📋 Troubleshooting Checklist
 
-Mermaid 図解が動作しない場合、以下を確認してください：
+If Mermaid exports fail, verify the following:
 
-- [ ] **ローカル環境で mmdc は動作するか？**
+- [ ] **Does `mmdc` work locally?**
   ```bash
   mmdc --version
   ```
-
-- [ ] **npm は正常にインストールされているか？**
+- [ ] **Is npm installed correctly?**
   ```bash
   npm --version
   ```
-
-- [ ] **Mermaid Live Editor にアクセスできるか？**
+- [ ] **Can you open Mermaid Live Editor?**
   ```
   https://mermaid.live/
   ```
-
-- [ ] **要約結果に Mermaid コードが含まれているか？**
-  ```
+- [ ] **Does the summary contain Mermaid code blocks?**
+  ```markdown
   ```mermaid
-  ... コード ...
+  ... code ...
   ```
   ```
-
-- [ ] **Azure App Service のログにエラーがないか？**
+- [ ] **Do Azure App Service logs show any errors?**
 
 ---
 
 ## 💡 Tips
 
-### Mermaid コードをコピーしやすくする
+### Copy Mermaid blocks quickly
 
-要約結果からコード部分を選択してコピー：
+Select only the code fence in the summary:
 
 ```markdown
-# 要約タイトル
+# Summary Title
 
 ...
 
 ```mermaid
 graph TD
     A[...] -->|...| B[...]
-    ...
 ```
 ```
 
-このコード部分をコピーして Mermaid Live Editor にペースト
+Paste that block directly into Mermaid Live Editor.
 
-### 複数の図を効率的に処理
+### Handle multiple diagrams efficiently
 
-要約に複数の Mermaid 図が含まれる場合：
-
-1. 各図を個別にコピー
-2. Mermaid Live Editor で変換
-3. 複数の PNG を保存
+1. Copy each block individually
+2. Paste into Mermaid Live Editor
+3. Download each PNG
 
 ---
 
-## 🔗 参考リンク
+## 🔗 Helpful links
 
 - **Mermaid Live Editor**: https://mermaid.live/
-- **Mermaid ドキュメント**: https://mermaid.js.org/
+- **Mermaid documentation**: https://mermaid.js.org/
 - **Azure App Service**: https://learn.microsoft.com/en-us/azure/app-service/
-- **npm 公式サイト**: https://www.npmjs.com/
+- **npm official site**: https://www.npmjs.com/
 
 ---
 
-## ❓ よくある質問
+## ❓ FAQ
 
-**Q: なぜ Azure では mmdc が動作しないのか？**
-A: セキュリティとリソース管理上の理由により、Azure App Service はグローバル npm パッケージの実行を制限しています。
+**Q: Why can’t Azure run `mmdc` out of the box?**  
+A: App Service restricts global npm packages for security/resource reasons.
 
-**Q: Mermaid Live Editor は安全か？**
-A: はい。Mermaid Live Editor は公式ツールで、データは暗号化されています。
+**Q: Is Mermaid Live Editor safe?**  
+A: Yes. It is the official tool and uses encrypted connections.
 
-**Q: オフラインでも動作するか？**
-A: ローカル環境で実行すれば、オフラインで完全に動作します。
+**Q: Can I work offline?**  
+A: Yes—run the app locally and install mermaid-cli on your machine.
 
-**Q: 他の PNG 変換方法はあるか？**
-A: SVG を使用するか、別の図表ツール（PlantUML など）の使用も検討できます。
-
+**Q: Are there other PNG conversion options?**  
+A: You can export SVG instead or use alternative tooling like PlantUML.
